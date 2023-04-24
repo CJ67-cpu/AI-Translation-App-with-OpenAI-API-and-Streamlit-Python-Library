@@ -1,2 +1,6 @@
 # AI-Translation-App-with-OpenAI-API-and-Streamlit-Python-Library
 This project aims to develop an AI-based translation application using the OpenAI API and Streamlit Python library. The primary goal of the application is to provide users with a simple yet effective translation tool that leverages the power of OpenAI's GPT models for natural language processing and understanding.
+The translation app will have the following components:
+1.Front-end user interface using Streamlit: Streamlit is an open-source Python library that allows you to create custom web applications with minimal effort. In this project, Streamlit will be used to develop the front-end user interface, including input fields for source language text, selection of source and target languages, and a display area for the translated text.
+2.OpenAI API integration: The OpenAI API provides access to powerful AI models, such as GPT-3, which can be used for various natural language processing tasks, including translation. This project will utilize the OpenAI API to perform the translation of text input by users.
+3.Request handling and processing: The application will handle user requests, send them to the OpenAI API for translation, and process the received response to display the translated text in the user interface.
