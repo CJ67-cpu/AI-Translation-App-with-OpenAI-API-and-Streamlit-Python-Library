@@ -50,10 +50,6 @@ response = client.chat.completions.create(
     model="gpt-4",
     messages=[...]
 )
-                    {"role": "system", "content": "You are a helpful assistant who translates books."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
             translation = response["choices"][0]["message"]["content"]
             translated_chunks.append(translation)
         except Exception as e:
