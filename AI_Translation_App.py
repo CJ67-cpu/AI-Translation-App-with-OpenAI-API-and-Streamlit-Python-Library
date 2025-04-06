@@ -43,10 +43,13 @@ Text:
 
 English Translation:"""
 
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
+     from openai import OpenAI
+client = OpenAI(api_key=...)
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[...]
+)
                     {"role": "system", "content": "You are a helpful assistant who translates books."},
                     {"role": "user", "content": prompt}
                 ]
