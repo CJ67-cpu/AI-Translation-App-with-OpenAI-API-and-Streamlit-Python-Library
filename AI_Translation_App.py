@@ -43,7 +43,7 @@ Text:
 
 English Translation:"""
 
-     from openai import OpenAI
+from openai import OpenAI
 client = OpenAI(api_key=...)
 
 response = client.chat.completions.create(
