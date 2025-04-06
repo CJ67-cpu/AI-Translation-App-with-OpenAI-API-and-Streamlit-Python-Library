@@ -9,9 +9,9 @@ if "OPENAI_API_KEY" not in st.secrets:
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-st.set_page_config(page_title="Spanish to English Book Translator")
+st.set_page_config(page_title="Book Translator")
 
-st.title("📚 Spanish to English Book Translator")
+st.title("📚 Book Translator")
 st.markdown("Upload a plain text (.txt) or Word (.docx) file in Spanish. This app will translate it into English using OpenAI GPT-4 or GPT-3.5 Turbo.")
 
 # Model selection
@@ -19,7 +19,7 @@ model_choice = st.selectbox("Choose translation quality:", ["GPT-3.5 Turbo", "GP
 model = "gpt-3.5-turbo" if model_choice == "GPT-3.5 Turbo" else "gpt-4"
 
 # File upload
-uploaded_file = st.file_uploader("Upload a Spanish text file", type=["txt", "docx"])
+uploaded_file = st.file_uploader("Upload a text of docx file", type=["txt", "docx"])
 
 def read_uploaded_file(uploaded_file):
     if uploaded_file.name.endswith(".txt"):
