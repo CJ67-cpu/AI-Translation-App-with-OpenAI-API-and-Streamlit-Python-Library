@@ -1,3 +1,2 @@
 streamlit
 openai
-Add required packages for Streamlit and OpenAI  
