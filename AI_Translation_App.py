@@ -63,7 +63,7 @@ except Exception as e:
     st.error(f"Error translating chunk {i+1}: {e}")
     translated_chunks.append("[Translation failed for this part]")
     
-        progress.progress((i + 1) / len(text_chunks))
+    progress.progress((i + 1) / len(text_chunks))
 
     full_translation = "\n\n".join(translated_chunks)
 
