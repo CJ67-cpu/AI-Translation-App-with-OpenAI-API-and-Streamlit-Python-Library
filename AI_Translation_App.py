@@ -46,16 +46,23 @@ English Translation:"""
 from openai import OpenAI
 client = OpenAI(api_key=...)
 
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[...]
-)
-            translation = response["choices"][0]["message"]["content"]
-            translated_chunks.append(translation)
-        except Exception as e:
-            st.error(f"Error translating chunk {i+1}: {e}")
-            translated_chunks.append("[Translation failed for this part]")
+from openai import OpenAI
+client = OpenAI(api_key=...)
 
+try:
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant who translates books."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    translation = response.choices[0].message.content
+    translated_chunks.append(translation)
+except Exception as e:
+    st.error(f"Error translating chunk {i+1}: {e}")
+    translated_chunks.append("[Translation failed for this part]")
+    
         progress.progress((i + 1) / len(text_chunks))
 
     full_translation = "\n\n".join(translated_chunks)
