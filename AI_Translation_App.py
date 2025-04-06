@@ -1,6 +1,11 @@
 import streamlit as st
 from openai import OpenAI
 from docx import Document
+from langdetect import detect, DetectorFactory
+from io import BytesIO
+
+# Set consistent detection
+DetectorFactory.seed = 0
 
 # Check for API key
 if "OPENAI_API_KEY" not in st.secrets:
@@ -9,17 +14,23 @@ if "OPENAI_API_KEY" not in st.secrets:
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-st.set_page_config(page_title="Book Translator")
+st.set_page_config(page_title="Spanish to English Book Translator")
 
 st.title("📚 Book Translator")
-st.markdown("Upload a plain text (.txt) or Word (.docx) file in Spanish. This app will translate it into English using OpenAI GPT-4 or GPT-3.5 Turbo.")
+st.markdown("Upload a plain text (.txt) or Word (.docx) file in any language. This app will detect the language and translate it into English using GPT-4 or GPT-3.5 Turbo.")
 
 # Model selection
 model_choice = st.selectbox("Choose translation quality:", ["GPT-3.5 Turbo", "GPT-4 Turbo"])
 model = "gpt-3.5-turbo" if model_choice == "GPT-3.5 Turbo" else "gpt-4"
 
+# Optional style prompt
+custom_instruction = st.text_input(
+    "Optional: Add a style or tone instruction (e.g. 'translate like a gothic novel')",
+    placeholder="Leave blank for default translation"
+)
+
 # File upload
-uploaded_file = st.file_uploader("Upload a text of docx file", type=["txt", "docx"])
+uploaded_file = st.file_uploader("Upload a text or Word file", type=["txt", "docx"])
 
 def read_uploaded_file(uploaded_file):
     if uploaded_file.name.endswith(".txt"):
@@ -35,13 +46,11 @@ if uploaded_file is not None:
     raw_text = read_uploaded_file(uploaded_file)
     st.success("File uploaded successfully.")
 
-    from langdetect import detect, DetectorFactory
-DetectorFactory.seed = 0  # for consistent results
+    # Detect language
+    detected_lang = detect(raw_text)
+    st.write(f"🌍 Detected language: **{detected_lang.upper()}**")
 
-detected_lang = detect(raw_text)
-st.write(f"🌍 Detected language: **{detected_lang.upper()}**")
-
-with st.expander("View original text"):
+    with st.expander("View original text"):
         st.text_area("Original text (first 500 characters):", raw_text[:500], height=200)
 
     word_count = len(raw_text.split())
@@ -66,8 +75,13 @@ with st.expander("View original text"):
         progress = st.progress(0)
 
         for i, chunk in enumerate(text_chunks):
+            if custom_instruction.strip():
+                style_note = f"Translate the following text into English, and {custom_instruction.strip()}. The source language is {detected_lang}."
+            else:
+                style_note = f"Translate the following text into English. The source language is {detected_lang}."
+
             prompt = f"""You are a professional literary translator.
-Translate the following Spanish text into English.
+{style_note}
 
 Text:
 {chunk}
@@ -84,7 +98,6 @@ English Translation:"""
                 )
                 translation = response.choices[0].message.content
                 translated_chunks.append(translation)
-
             except Exception as e:
                 st.error(f"Error translating chunk {i+1}: {e}")
                 translated_chunks.append("[Translation failed for this part]")
@@ -96,10 +109,20 @@ English Translation:"""
         st.subheader("✅ Translated Text")
         st.text_area("Translation (preview):", full_translation[:1500], height=300)
 
-        st.download_button(
-            label="📥 Download Translated Text",
-            data=full_translation,
-            file_name="translated_text.txt",
-            mime="text/plain"
-        )
+        # Create DOCX in memory
+        doc = Document()
+        doc.add_heading("Translated Document", 0)
 
+        for paragraph in full_translation.split("\n\n"):
+            doc.add_paragraph(paragraph)
+
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+
+        st.download_button(
+            label="📥 Download Translated .docx",
+            data=buffer,
+            file_name="translated_text.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
