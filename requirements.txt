@@ -1,3 +1,4 @@
 streamlit
 openai
 python-docx>=1.0.0
+langdetect
