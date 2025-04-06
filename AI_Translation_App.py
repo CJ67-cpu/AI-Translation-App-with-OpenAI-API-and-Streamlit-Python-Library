@@ -41,8 +41,6 @@ DetectorFactory.seed = 0  # for consistent results
 detected_lang = detect(raw_text)
 st.write(f"🌍 Detected language: **{detected_lang.upper()}**")
 
-Does it matter where I put this code? Is there a best practice way of adding bits of code to an app in this way?
-
     with st.expander("View original Spanish text"):
         st.text_area("Original text (first 500 characters):", raw_text[:500], height=200)
 
