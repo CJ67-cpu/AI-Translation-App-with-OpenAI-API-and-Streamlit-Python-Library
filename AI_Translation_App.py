@@ -41,7 +41,7 @@ DetectorFactory.seed = 0  # for consistent results
 detected_lang = detect(raw_text)
 st.write(f"🌍 Detected language: **{detected_lang.upper()}**")
 
-    with st.expander("View original Spanish text"):
+with st.expander("View original text"):
         st.text_area("Original text (first 500 characters):", raw_text[:500], height=200)
 
     word_count = len(raw_text.split())
