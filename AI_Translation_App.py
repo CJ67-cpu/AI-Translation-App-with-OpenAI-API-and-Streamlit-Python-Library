@@ -1,13 +1,15 @@
+
 import streamlit as st
 from openai import OpenAI
 from docx import Document
 from langdetect import detect, DetectorFactory
 from io import BytesIO
+import re
+import tiktoken
 from prompt_modules import (
     gender_module, genre_style_module, consistency_module,
     dialogue_module, idiom_module, formatting_module
 )
-import re
 
 # Set consistent detection
 DetectorFactory.seed = 0
@@ -47,25 +49,27 @@ def read_uploaded_file(uploaded_file):
         st.error("Unsupported file format.")
         return ""
 
-# Improved chunking that preserves paragraph breaks
-def split_into_chunks(text, max_words=500):
-    paragraphs = re.split(r'\n\s*\n', text)  # Split by blank lines = paragraphs
+# Split by paragraphs and ensure each chunk stays within token limit
+def split_text_by_tokens(text, prompt_tokens=1500, max_total_tokens=16000):
+    enc = tiktoken.encoding_for_model("gpt-4")
+    max_chunk_tokens = max_total_tokens - prompt_tokens
+    paragraphs = re.split(r'\n\s*\n', text)
     chunks = []
-    current_chunk = []
-    current_word_count = 0
+    current_chunk = ""
+    current_tokens = 0
 
     for para in paragraphs:
-        word_count = len(para.split())
-        if current_word_count + word_count <= max_words:
-            current_chunk.append(para)
-            current_word_count += word_count
+        para_tokens = len(enc.encode(para))
+        if current_tokens + para_tokens <= max_chunk_tokens:
+            current_chunk += para + "\n\n"
+            current_tokens += para_tokens
         else:
-            chunks.append("\n\n".join(current_chunk))
-            current_chunk = [para]
-            current_word_count = word_count
+            chunks.append(current_chunk.strip())
+            current_chunk = para + "\n\n"
+            current_tokens = para_tokens
 
     if current_chunk:
-        chunks.append("\n\n".join(current_chunk))
+        chunks.append(current_chunk.strip())
 
     return chunks
 
@@ -90,7 +94,7 @@ if uploaded_file is not None:
 
     st.info(f"Estimated translation cost using {model_choice}: **${cost:.2f}** for ~{word_count} words")
 
-    text_chunks = split_into_chunks(raw_text, max_words=500)
+    text_chunks = split_text_by_tokens(raw_text)
 
     if st.button("Translate Text"):
         st.info("Translating... This may take a while for large files.")
