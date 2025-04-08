@@ -1,4 +1,3 @@
-
 import streamlit as st
 from openai import OpenAI
 from docx import Document
@@ -49,7 +48,7 @@ def read_uploaded_file(uploaded_file):
         return ""
 
 # Improved chunking that preserves paragraph breaks
-def split_into_chunks(text, max_words=800):
+def split_into_chunks(text, max_words=500):
     paragraphs = re.split(r'\n\s*\n', text)  # Split by blank lines = paragraphs
     chunks = []
     current_chunk = []
@@ -91,7 +90,7 @@ if uploaded_file is not None:
 
     st.info(f"Estimated translation cost using {model_choice}: **${cost:.2f}** for ~{word_count} words")
 
-    text_chunks = split_into_chunks(raw_text)
+    text_chunks = split_into_chunks(raw_text, max_words=500)
 
     if st.button("Translate Text"):
         st.info("Translating... This may take a while for large files.")
@@ -156,14 +155,6 @@ English Translation:"""
         buffer = BytesIO()
         doc.save(buffer)
         buffer.seek(0)
-
-        st.download_button(
-            label="📥 Download Translated .docx",
-            data=buffer,
-            file_name="translated_text.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-
 
         st.download_button(
             label="📥 Download Translated .docx",
