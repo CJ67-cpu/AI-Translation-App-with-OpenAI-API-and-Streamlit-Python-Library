@@ -1,8 +1,14 @@
+
 import streamlit as st
 from openai import OpenAI
 from docx import Document
 from langdetect import detect, DetectorFactory
 from io import BytesIO
+from prompt_modules import (
+    gender_module, genre_style_module, consistency_module,
+    dialogue_module, idiom_module, formatting_module
+)
+import re
 
 # Set consistent detection
 DetectorFactory.seed = 0
@@ -14,7 +20,7 @@ if "OPENAI_API_KEY" not in st.secrets:
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-st.set_page_config(page_title="Spanish to English Book Translator")
+st.set_page_config(page_title="Book Translator")
 
 st.title("📚 Book Translator")
 st.markdown("Upload a plain text (.txt) or Word (.docx) file in any language. This app will detect the language and translate it into English using GPT-4 or GPT-3.5 Turbo.")
@@ -42,6 +48,28 @@ def read_uploaded_file(uploaded_file):
         st.error("Unsupported file format.")
         return ""
 
+# Improved chunking that preserves paragraph breaks
+def split_into_chunks(text, max_words=800):
+    paragraphs = re.split(r'\n\s*\n', text)  # Split by blank lines = paragraphs
+    chunks = []
+    current_chunk = []
+    current_word_count = 0
+
+    for para in paragraphs:
+        word_count = len(para.split())
+        if current_word_count + word_count <= max_words:
+            current_chunk.append(para)
+            current_word_count += word_count
+        else:
+            chunks.append("\n\n".join(current_chunk))
+            current_chunk = [para]
+            current_word_count = word_count
+
+    if current_chunk:
+        chunks.append("\n\n".join(current_chunk))
+
+    return chunks
+
 if uploaded_file is not None:
     raw_text = read_uploaded_file(uploaded_file)
     st.success("File uploaded successfully.")
@@ -63,10 +91,6 @@ if uploaded_file is not None:
 
     st.info(f"Estimated translation cost using {model_choice}: **${cost:.2f}** for ~{word_count} words")
 
-    def split_into_chunks(text, max_words=800):
-        words = text.split()
-        return [" ".join(words[i:i + max_words]) for i in range(0, len(words), max_words)]
-
     text_chunks = split_into_chunks(raw_text)
 
     if st.button("Translate Text"):
@@ -74,14 +98,27 @@ if uploaded_file is not None:
         translated_chunks = []
         progress = st.progress(0)
 
-        for i, chunk in enumerate(text_chunks):
-            if custom_instruction.strip():
-                style_note = f"Translate the following text into English, and {custom_instruction.strip()}. The source language is {detected_lang}."
-            else:
-                style_note = f"Translate the following text into English. The source language is {detected_lang}."
+        gender_sensitive_languages = ["es", "it", "pt", "fr"]
 
-            prompt = f"""You are a professional literary translator.
-{style_note}
+        for i, chunk in enumerate(text_chunks):
+            injected_modules = [
+                consistency_module,
+                dialogue_module,
+                idiom_module,
+                formatting_module
+            ]
+
+            if detected_lang in gender_sensitive_languages:
+                injected_modules.insert(0, gender_module)
+
+            if custom_instruction.strip():
+                injected_modules.append(genre_style_module(custom_instruction.strip()))
+
+            translation_instructions = "\n\n".join(injected_modules)
+
+            prompt = f"""You are a professional literary translator. Translate the following text from {detected_lang} into English.
+
+{translation_instructions}
 
 Text:
 {chunk}
@@ -119,6 +156,14 @@ English Translation:"""
         buffer = BytesIO()
         doc.save(buffer)
         buffer.seek(0)
+
+        st.download_button(
+            label="📥 Download Translated .docx",
+            data=buffer,
+            file_name="translated_text.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+
 
         st.download_button(
             label="📥 Download Translated .docx",
