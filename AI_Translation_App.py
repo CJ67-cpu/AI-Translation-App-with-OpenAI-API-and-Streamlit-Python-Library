@@ -7,7 +7,7 @@ from io import BytesIO
 import re
 import tiktoken
 import pandas as pd
-from prompt_modules_short import (
+from prompt_modules import (
     gender_module, genre_style_module, consistency_module,
     dialogue_module, idiom_module, formatting_module
 )
